@@ -29,7 +29,7 @@ jobs:
       - name: Get droplet IDs and names with the specified tag (Dry Run)
         id: get_droplets_dry_run
         run: |
-          DROPS=$(doctl compute droplet list --tag-name "${{ env.DROPLET_TAG }}" --format json)
+          DROPS=$(doctl compute droplet list --tag-name "${{ env.DROPLET_TAG }}" --output json)
           if [[ -n "$DROPS" ]]; then
             echo "::group::Droplets to be deleted (Dry Run):"
             for droplet in $(echo "$DROPS"); do
@@ -58,7 +58,7 @@ jobs:
   #     - name: Get droplet IDs with the specified tag
   #       id: get_droplets
   #       run: |
-  #         DROPS=$(doctl compute droplet list --tag-name "${{ env.DROPLET_TAG }}" --format json)
+  #         DROPS=$(doctl compute droplet list --tag-name "${{ env.DROPLET_TAG }}" --output json)
   #         if [[ -n "$DROPS" ]]; then
   #           echo "::set-output name=droplet_ids::$(echo "$DROPS" | jq -r '.[].id' | tr '\n' ',')"
   #         else
