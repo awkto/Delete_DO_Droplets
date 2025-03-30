@@ -53,39 +53,39 @@ jobs:
         run: echo "Droplets with tag '${{ github.event.inputs.tag_name }}' have been deleted (DRYRUN)."
   
 
-  delete_droplets:
-    runs-on: ubuntu-latest
-    needs: dry_run_delete_droplets # add a dependency, so delete only runs if dry run succeeded.
+  # delete_droplets:
+  #   runs-on: ubuntu-latest
+  #   needs: dry_run_delete_droplets # add a dependency, so delete only runs if dry run succeeded.
 
-    steps:
-      - name: Checkout code (if needed)
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code (if needed)
+  #       uses: actions/checkout@v4
 
-      - name: Set up doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+  #     - name: Set up doctl
+  #       uses: digitalocean/action-doctl@v2
+  #       with:
+  #         token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-      - name: Get droplet IDs with the specified tag
-        id: get_droplets
-        run: |
-          DROPS=$(doctl compute droplet list --tag-name "${{ github.event.inputs.tag_name }}" --format json)
-          if [[ -n "$DROPS" ]]; then
-            echo "::set-output name=droplet_ids::$(echo "$DROPS" | jq -r '.[].id' | tr '\n' ',')"
-          else
-            echo "No droplets found with tag: ${{ github.event.inputs.tag_name }}"
-            exit 0 # exit gracefully if no droplets are found.
-          fi
+  #     - name: Get droplet IDs with the specified tag
+  #       id: get_droplets
+  #       run: |
+  #         DROPS=$(doctl compute droplet list --tag-name "${{ github.event.inputs.tag_name }}" --format json)
+  #         if [[ -n "$DROPS" ]]; then
+  #           echo "::set-output name=droplet_ids::$(echo "$DROPS" | jq -r '.[].id' | tr '\n' ',')"
+  #         else
+  #           echo "No droplets found with tag: ${{ github.event.inputs.tag_name }}"
+  #           exit 0 # exit gracefully if no droplets are found.
+  #         fi
 
-      - name: Delete droplets
-        if: steps.get_droplets.outputs.droplet_ids != ''
-        run: |
-          DROPLET_IDS=$(echo "${{ steps.get_droplets.outputs.droplet_ids }}" | sed 's/,$//')
-          echo "Deleting droplets with IDs: $DROPLET_IDS"
-          for droplet_id in $(echo "$DROPLET_IDS" | tr ',' ' '); do
-            doctl compute droplet delete --force $droplet_id
-          done
+  #     - name: Delete droplets
+  #       if: steps.get_droplets.outputs.droplet_ids != ''
+  #       run: |
+  #         DROPLET_IDS=$(echo "${{ steps.get_droplets.outputs.droplet_ids }}" | sed 's/,$//')
+  #         echo "Deleting droplets with IDs: $DROPLET_IDS"
+  #         for droplet_id in $(echo "$DROPLET_IDS" | tr ',' ' '); do
+  #           doctl compute droplet delete --force $droplet_id
+  #         done
 
-      - name: Print completion message
-        if: steps.get_droplets.outputs.droplet_ids != ''
-        run: echo "Droplets with tag '${{ github.event.inputs.tag_name }}' have been deleted."
+  #     - name: Print completion message
+  #       if: steps.get_droplets.outputs.droplet_ids != ''
+  #       run: echo "Droplets with tag '${{ github.event.inputs.tag_name }}' have been deleted."
