@@ -2,7 +2,7 @@ name: Delete DigitalOcean Droplets by Tag (Scheduled)
 
 on:
   schedule:
-    - cron: '0 9 * * *' # Runs every day at 9 AM UTC (7 PM Brisbane time)
+    - cron: '0 9 * * *' # Runs every day at 9 AM UTC
   workflow_dispatch:
     inputs:
       tag_name:
@@ -10,6 +10,8 @@ on:
         required: true
         type: string
 
+env:
+  DROPLET_TAG: "your-scheduled-tag" # Replace with your desired tag
 
 jobs:
   dry_run_delete_droplets:
@@ -27,7 +29,7 @@ jobs:
       - name: Get droplet IDs and names with the specified tag (Dry Run)
         id: get_droplets_dry_run
         run: |
-          DROPS=$(doctl compute droplet list --tag-name "${{ github.event.inputs.tag_name }}" --format json)
+          DROPS=$(doctl compute droplet list --tag-name "${{ env.DROPLET_TAG }}" --format json)
           if [[ -n "$DROPS" ]]; then
             echo "::group::Droplets to be deleted (Dry Run):"
             for droplet in $(echo "$DROPS"); do
@@ -37,25 +39,12 @@ jobs:
             done
             echo "::endgroup::"
           else
-            echo "No droplets found with tag: ${{ github.event.inputs.tag_name }}"
+            echo "No droplets found with tag: ${{ env.DROPLET_TAG }}"
           fi
-      - name: Delete droplets Dryrun
-        if: steps.get_droplets.outputs.droplet_ids != ''
-        run: |
-          DROPLET_IDS=$(echo "${{ steps.get_droplets.outputs.droplet_ids }}" | sed 's/,$//')
-          echo "Deleting droplets with IDs: $DROPLET_IDS (DRYRUN)"
-          for droplet_id in $(echo "$DROPLET_IDS" | tr ',' ' '); do
-            echo 'Dry run deleting with #compute_droplet_delete_--force_$droplet_id'
-          done
-
-      - name: Print completion message Dryrun
-        if: steps.get_droplets.outputs.droplet_ids != ''
-        run: echo "Droplets with tag '${{ github.event.inputs.tag_name }}' have been deleted (DRYRUN)."
-  
 
   # delete_droplets:
   #   runs-on: ubuntu-latest
-  #   needs: dry_run_delete_droplets # add a dependency, so delete only runs if dry run succeeded.
+  #   needs: dry_run_delete_droplets
 
   #   steps:
   #     - name: Checkout code (if needed)
@@ -69,12 +58,12 @@ jobs:
   #     - name: Get droplet IDs with the specified tag
   #       id: get_droplets
   #       run: |
-  #         DROPS=$(doctl compute droplet list --tag-name "${{ github.event.inputs.tag_name }}" --format json)
+  #         DROPS=$(doctl compute droplet list --tag-name "${{ env.DROPLET_TAG }}" --format json)
   #         if [[ -n "$DROPS" ]]; then
   #           echo "::set-output name=droplet_ids::$(echo "$DROPS" | jq -r '.[].id' | tr '\n' ',')"
   #         else
-  #           echo "No droplets found with tag: ${{ github.event.inputs.tag_name }}"
-  #           exit 0 # exit gracefully if no droplets are found.
+  #           echo "No droplets found with tag: ${{ env.DROPLET_TAG }}"
+  #           exit 0
   #         fi
 
   #     - name: Delete droplets
@@ -88,4 +77,4 @@ jobs:
 
   #     - name: Print completion message
   #       if: steps.get_droplets.outputs.droplet_ids != ''
-  #       run: echo "Droplets with tag '${{ github.event.inputs.tag_name }}' have been deleted."
+  #       run: echo "Droplets with tag '${{ env.DROPLET_TAG }}' have been deleted."
